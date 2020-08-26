@@ -1,97 +1,81 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D))]
-[RequireComponent(typeof(CapsuleCollider2D))]
-
+[RequireComponent(typeof(BoxCollider2D))]
 public class CharacterController2D : MonoBehaviour
 {
-    // Move player in 2D space
-    public float maxSpeed = 3.4f;
-    public float jumpHeight = 6.5f;
-    public float gravityScale = 1.5f;
-    public Camera mainCamera;
+    [SerializeField, Tooltip("Max speed, in units per second, that the character moves.")]
+    float speed = 9;
 
-    bool facingRight = true;
-    float moveDirection = 0;
-    bool isGrounded = false;
-    Vector3 cameraPos;
-    Rigidbody2D r2d;
-    Collider2D mainCollider;
-    // Check every collider except Player and Ignore Raycast
-    LayerMask layerMask = ~(1 << 2 | 1 << 8);
-    Transform t;
+    [SerializeField, Tooltip("Acceleration while grounded.")]
+    float walkAcceleration = 75;
 
-    // Use this for initialization
-    void Start()
+    [SerializeField, Tooltip("Acceleration while in the air.")]
+    float airAcceleration = 30;
+
+    [SerializeField, Tooltip("Deceleration applied when character is grounded and not attempting to move.")]
+    float groundDeceleration = 70;
+
+    [SerializeField, Tooltip("Max height the character will jump regardless of gravity")]
+    float jumpHeight = 4;
+
+    private BoxCollider2D boxCollider;
+    private Vector2 velocity;
+    private bool grounded;
+
+    private void Awake()
     {
-        t = transform;
-        r2d = GetComponent<Rigidbody2D>();
-        mainCollider = GetComponent<Collider2D>();
-        r2d.freezeRotation = true;
-        r2d.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-        r2d.gravityScale = gravityScale;
-        facingRight = t.localScale.x > 0;
-        gameObject.layer = 8;
-
-        if (mainCamera)
-            cameraPos = mainCamera.transform.position;
+        boxCollider = GetComponent<BoxCollider2D>();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        // Movement controls
-        if ((Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D)) && (isGrounded || r2d.velocity.x > 0.01f))
+        if (grounded)
         {
-            moveDirection = Input.GetKey(KeyCode.A) ? -1 : 1;
+            velocity.y = 0;
+            if (Input.GetButtonDown("Jump"))
+            {
+                velocity.y = Mathf.Sqrt(2 * jumpHeight * Mathf.Abs(Physics2D.gravity.y));
+            }
+        }
+
+        velocity.y += Physics2D.gravity.y * Time.deltaTime;
+
+        float moveInput = Input.GetAxisRaw("Horizontal");
+        float acceleration = grounded ? walkAcceleration : airAcceleration;
+        float deceleration = grounded ? groundDeceleration : 0;
+
+        // Update the velocity assignment statements to use our selected
+        // acceleration and deceleration values.
+        if (moveInput != 0)
+        {
+            velocity.x = Mathf.MoveTowards(velocity.x, speed * moveInput, acceleration * Time.deltaTime);
         }
         else
         {
-            if (isGrounded || r2d.velocity.magnitude < 0.01f)
-            {
-                moveDirection = 0;
-            }
+            velocity.x = Mathf.MoveTowards(velocity.x, 0, deceleration * Time.deltaTime);
         }
 
-        // Change facing direction
-        if (moveDirection != 0)
+        transform.Translate(velocity * Time.deltaTime);
+        Collider2D[] hits = Physics2D.OverlapBoxAll(transform.position, boxCollider.size, 0);
+
+        grounded = false;
+        foreach (Collider2D hit in hits)
         {
-            if (moveDirection > 0 && !facingRight)
+            if (hit == boxCollider)
+                continue;
+
+            ColliderDistance2D colliderDistance = hit.Distance(boxCollider);
+
+            if (colliderDistance.isOverlapped)
             {
-                facingRight = true;
-                t.localScale = new Vector3(Mathf.Abs(t.localScale.x), t.localScale.y, transform.localScale.z);
-            }
-            if (moveDirection < 0 && facingRight)
-            {
-                facingRight = false;
-                t.localScale = new Vector3(-Mathf.Abs(t.localScale.x), t.localScale.y, t.localScale.z);
+                transform.Translate(colliderDistance.pointA - colliderDistance.pointB);
+
+                if (Vector2.Angle(colliderDistance.normal, Vector2.up) < 90 && velocity.y < 0)
+                {
+                    grounded = true;
+                }
+
             }
         }
-
-        // Jumping
-        if (Input.GetKeyDown(KeyCode.W) && isGrounded)
-        {
-            r2d.velocity = new Vector2(r2d.velocity.x, jumpHeight);
-        }
-
-        // Camera follow
-        if (mainCamera)
-            mainCamera.transform.position = new Vector3(t.position.x, cameraPos.y, cameraPos.z);
-    }
-
-    void FixedUpdate()
-    {
-        Bounds colliderBounds = mainCollider.bounds;
-        Vector3 groundCheckPos = colliderBounds.min + new Vector3(colliderBounds.size.x * 0.5f, 0.1f, 0);
-        // Check if player is grounded
-        isGrounded = Physics2D.OverlapCircle(groundCheckPos, 0.23f, layerMask);
-
-        // Apply movement velocity
-        r2d.velocity = new Vector2((moveDirection) * maxSpeed, r2d.velocity.y);
-
-        // Simple debug
-        Debug.DrawLine(groundCheckPos, groundCheckPos - new Vector3(0, 0.23f, 0), isGrounded ? Color.green : Color.red);
     }
 }

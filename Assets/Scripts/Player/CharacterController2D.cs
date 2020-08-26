@@ -1,10 +1,17 @@
 ﻿using UnityEngine;
+using System.Collections;
+using System;
 
-[RequireComponent(typeof(BoxCollider2D))]
 public class CharacterController2D : MonoBehaviour
 {
+    [SerializeField, Tooltip("Gravity acting on object")]
+    float gravity = 6;
+
     [SerializeField, Tooltip("Max speed, in units per second, that the character moves.")]
-    float speed = 9;
+    float maxSpeed = 9;
+
+    [SerializeField, Tooltip("Max speed, in units per second, that the character falls.")]
+    float maxFall = 9;
 
     [SerializeField, Tooltip("Acceleration while grounded.")]
     float walkAcceleration = 75;
@@ -18,16 +25,86 @@ public class CharacterController2D : MonoBehaviour
     [SerializeField, Tooltip("Max height the character will jump regardless of gravity")]
     float jumpHeight = 4;
 
-    private BoxCollider2D boxCollider;
-    private Vector2 velocity;
-    private bool grounded;
+    int layerMask;
 
-    private void Awake()
+    private Rect box;
+
+    private Vector2 velocity;
+
+    // Check vars
+    private bool grounded;
+    private bool falling;
+
+    // Raycasting vars
+    private int horizontalRays = 6;
+    private int verticalRays = 4;
+    private int margin = 2;
+
+    private void Start()
     {
-        boxCollider = GetComponent<BoxCollider2D>();
+        this.layerMask = LayerMask.NameToLayer("NormalCollisions");
     }
 
-    private void Update()
+    private void FixedUpdate()
+    {
+        this.box = new Rect(
+            GetComponent<Collider2D>().bounds.min.x,
+            GetComponent<Collider2D>().bounds.min.y,
+            GetComponent<Collider2D>().bounds.size.x,
+            GetComponent<Collider2D>().bounds.size.y
+            );
+
+        if(!grounded)
+        {
+            velocity = new Vector2(velocity.x, Mathf.Max(velocity.y - gravity, -maxFall));
+        }
+
+        if(velocity.y < 0)
+        {
+            falling = true;
+        }
+
+        if(grounded || falling)
+        {
+            Vector3 startPoint = new Vector3(box.xMin + margin, box.center.y, transform.position.z);
+            Vector3 endPoint = new Vector3(box.xMin - margin, box.center.y, transform.position.z);
+
+            RaycastHit hitInfo;
+
+            float distance = box.height / 2 + (grounded ? margin : Mathf.Abs(velocity.y * Time.deltaTime));
+
+            bool connected = false;
+
+            for(int i = 0; i < verticalRays; i++)
+            {
+                float lerpAmmount = (float) i / (float) verticalRays - 1;
+                Vector3 origin = Vector3.Lerp(startPoint, endPoint, lerpAmmount);
+
+                Ray ray = new Ray(origin, Vector3.down);
+
+                connected = Physics.Raycast(ray, out hitInfo, distance, layerMask);
+
+                if(connected)
+                {
+                    grounded = true;
+                    falling = false;
+                    transform.Translate(Vector3.down * (hitInfo.distance - box.height / 2));
+                    velocity = new Vector2(velocity.x, 0);
+                }
+            }
+
+            if(!connected)
+            {
+                grounded = false;
+            }
+        }
+    }
+    private void LateUpdate()
+    {
+        transform.Translate(velocity * Time.deltaTime);
+    }
+
+   /* private void Update()
     {
         if (grounded)
         {
@@ -48,7 +125,7 @@ public class CharacterController2D : MonoBehaviour
         // acceleration and deceleration values.
         if (moveInput != 0)
         {
-            velocity.x = Mathf.MoveTowards(velocity.x, speed * moveInput, acceleration * Time.deltaTime);
+            velocity.x = Mathf.MoveTowards(velocity.x, maxSpeed * moveInput, acceleration * Time.deltaTime);
         }
         else
         {
@@ -56,7 +133,7 @@ public class CharacterController2D : MonoBehaviour
         }
 
         transform.Translate(velocity * Time.deltaTime);
-        Collider2D[] hits = Physics2D.OverlapBoxAll(transform.position, boxCollider.size, 0);
+        *//*Collider2D[] hits = Physics2D.OverlapBoxAll(transform.position, boxCollider.size, 0);
 
         grounded = false;
         foreach (Collider2D hit in hits)
@@ -76,6 +153,6 @@ public class CharacterController2D : MonoBehaviour
                 }
 
             }
-        }
-    }
+        }*//*
+    }*/
 }

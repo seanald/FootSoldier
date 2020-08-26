@@ -9,10 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 123371217050786507}
-  - component: {fileID: 123371217050786504}
   - component: {fileID: 123371217050786506}
   - component: {fileID: 123371217050786519}
-  - component: {fileID: 416906276357567815}
+  - component: {fileID: -2701980657905461193}
+  - component: {fileID: -3616866882736107065}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -34,27 +34,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!50 &123371217050786504
-Rigidbody2D:
-  serializedVersion: 4
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 123371217050786508}
-  m_BodyType: 0
-  m_Simulated: 1
-  m_UseFullKinematicContacts: 0
-  m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDrag: 0
-  m_AngularDrag: 0.05
-  m_GravityScale: 1
-  m_Material: {fileID: 0}
-  m_Interpolate: 0
-  m_SleepingMode: 1
-  m_CollisionDetection: 0
-  m_Constraints: 0
 --- !u!114 &123371217050786506
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67,11 +46,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d3437afdc36c3248923c330a3fc3037, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 9
+  gravity: 6
+  maxSpeed: 9
+  maxFall: 9
   walkAcceleration: 75
   airAcceleration: 30
   groundDeceleration: 70
-  jumpHeight: 10
+  jumpHeight: 4
 --- !u!212 &123371217050786519
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -123,7 +104,28 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!61 &416906276357567815
+--- !u!50 &-2701980657905461193
+Rigidbody2D:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 123371217050786508}
+  m_BodyType: 0
+  m_Simulated: 0
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDrag: 0
+  m_AngularDrag: 0.05
+  m_GravityScale: 0
+  m_Material: {fileID: 0}
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 7
+--- !u!61 &-3616866882736107065
 BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -147,5 +149,5 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.5, y: 1}
+  m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0

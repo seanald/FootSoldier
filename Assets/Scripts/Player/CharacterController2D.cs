@@ -14,10 +14,10 @@ public class CharacterController2D : MonoBehaviour
     float maxFall = 9;
 
     [SerializeField, Tooltip("Acceleration while grounded.")]
-    float walkAcceleration = 75;
+    float walkAcceleration = 4;
 
     [SerializeField, Tooltip("Acceleration while in the air.")]
-    float airAcceleration = 30;
+    float airAcceleration = 2;
 
     [SerializeField, Tooltip("Deceleration applied when character is grounded and not attempting to move.")]
     float groundDeceleration = 70;
@@ -38,8 +38,9 @@ public class CharacterController2D : MonoBehaviour
     // Raycasting vars
     private int horizontalRays = 6;
     private int verticalRays = 4;
-    private int margin = 2;
+    private int marginPercent = 20;
 
+    public LineRenderer lineRenderer;
     private void Start()
     {
         this.layerMask = LayerMask.NameToLayer("NormalCollisions");
@@ -54,7 +55,8 @@ public class CharacterController2D : MonoBehaviour
             GetComponent<Collider2D>().bounds.size.y
             );
 
-        if(!grounded)
+        // --------------- GRAVITY --------------- //
+        if (!grounded)
         {
             velocity = new Vector2(velocity.x, Mathf.Max(velocity.y - gravity, -maxFall));
         }
@@ -66,10 +68,11 @@ public class CharacterController2D : MonoBehaviour
 
         if(grounded || falling)
         {
-            Vector3 startPoint = new Vector3(box.xMin + margin, box.center.y, transform.position.z);
-            Vector3 endPoint = new Vector3(box.xMin - margin, box.center.y, transform.position.z);
+            float margin = ((float)marginPercent / (float)100 * box.height);
+            Vector2 startPoint = new Vector2(box.xMin + margin, box.center.y);
+            Vector2 endPoint = new Vector2(box.xMax - margin, box.center.y);
 
-            RaycastHit hitInfo;
+            RaycastHit2D hitInfo;
 
             float distance = box.height / 2 + (grounded ? margin : Mathf.Abs(velocity.y * Time.deltaTime));
 
@@ -77,19 +80,20 @@ public class CharacterController2D : MonoBehaviour
 
             for(int i = 0; i < verticalRays; i++)
             {
-                float lerpAmmount = (float) i / (float) verticalRays - 1;
-                Vector3 origin = Vector3.Lerp(startPoint, endPoint, lerpAmmount);
+                float lerpAmmount = (float) i / (float) (verticalRays - 1);
+                Vector2 origin = Vector2.Lerp(startPoint, endPoint, lerpAmmount);
 
-                Ray ray = new Ray(origin, Vector3.down);
+                hitInfo = Physics2D.Raycast(origin, Vector2.down, distance);
+                connected = hitInfo.collider != null;
 
-                connected = Physics.Raycast(ray, out hitInfo, distance, layerMask);
-
-                if(connected)
+                Debug.DrawRay(origin, Vector2.down, Color.red);
+                if (connected)
                 {
                     grounded = true;
                     falling = false;
-                    transform.Translate(Vector3.down * (hitInfo.distance - box.height / 2));
+                    transform.Translate(Vector2.down * (hitInfo.distance - box.height / 2));
                     velocity = new Vector2(velocity.x, 0);
+                    break;
                 }
             }
 
@@ -98,6 +102,56 @@ public class CharacterController2D : MonoBehaviour
                 grounded = false;
             }
         }
+
+        // --------------- LATERAL MOVEMENT --------------- //
+        float horizontalAxis = Input.GetAxisRaw("Horizontal");
+        float newVelocityX = velocity.x;
+
+        if(horizontalAxis != 0)
+        {
+            newVelocityX += walkAcceleration * horizontalAxis;
+            newVelocityX = Mathf.Clamp(newVelocityX, -maxSpeed, maxSpeed);
+        }
+        else if (velocity.x != 0)
+        {
+            int modifier = velocity.x > 0 ? -1 : 1;
+            newVelocityX += groundDeceleration * modifier;
+        }
+
+        velocity = new Vector2(newVelocityX, velocity.y);
+
+        if(velocity.x != 0)
+        {
+            float margin = ((float)marginPercent / (float)100 * box.width);
+
+            Vector2 startPoint = new Vector2(box.center.x, box.yMin + margin);
+            Vector2 endPoint = new Vector2(box.center.x, box.yMax - margin);
+
+            RaycastHit2D hitInfo;
+
+            float sideRayLength = margin + Mathf.Abs(velocity.x * Time.deltaTime);
+            Vector2 direction = velocity.x > 0 ? Vector2.right : Vector2.left;
+
+            bool connected = false;
+
+            for (int i = 0; i < horizontalRays; i++)
+            {
+                float lerpAmmount = (float)i / (float) (horizontalRays - 1);
+                Vector2 origin = Vector2.Lerp(startPoint, endPoint, lerpAmmount);
+
+                hitInfo = Physics2D.Raycast(origin, direction, sideRayLength);
+                connected = hitInfo.collider != null;
+                Debug.DrawRay(origin, direction, Color.green);
+                if (connected)
+                {
+                    Debug.Log("Connected");
+                    transform.Translate(direction * (hitInfo.distance - box.width / 2));
+                    velocity = new Vector2(0, velocity.y);
+                    break;
+                }
+            }
+        }
+
     }
     private void LateUpdate()
     {

@@ -2399,6 +2399,10 @@ PrefabInstance:
       propertyPath: airAcceleration
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 123371217050786506, guid: b6e6aa4bef5d30d4d94f988f64c04fd4, type: 3}
+      propertyPath: groundDeceleration
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 123371217050786507, guid: b6e6aa4bef5d30d4d94f988f64c04fd4, type: 3}
       propertyPath: m_LocalPosition.x
       value: -2.47

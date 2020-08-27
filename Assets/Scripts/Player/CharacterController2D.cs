@@ -34,6 +34,8 @@ public class CharacterController2D : MonoBehaviour
     // Check vars
     private bool grounded;
     private bool falling;
+    private bool lastInput;
+    private float jumpPressedTime;
 
     // Raycasting vars
     private int horizontalRays = 6;
@@ -158,55 +160,25 @@ public class CharacterController2D : MonoBehaviour
         transform.Translate(velocity * Time.deltaTime);
     }
 
-   /* private void Update()
+    void Update()
     {
-        if (grounded)
+        bool input = Input.GetButton("Jump");
+        if (input && !lastInput)
         {
-            velocity.y = 0;
-            if (Input.GetButtonDown("Jump"))
-            {
-                velocity.y = Mathf.Sqrt(2 * jumpHeight * Mathf.Abs(Physics2D.gravity.y));
-            }
+            jumpPressedTime = Time.time;
+        }
+        else if (!input)
+        {
+            jumpPressedTime = 0;
         }
 
-        velocity.y += Physics2D.gravity.y * Time.deltaTime;
-
-        float moveInput = Input.GetAxisRaw("Horizontal");
-        float acceleration = grounded ? walkAcceleration : airAcceleration;
-        float deceleration = grounded ? groundDeceleration : 0;
-
-        // Update the velocity assignment statements to use our selected
-        // acceleration and deceleration values.
-        if (moveInput != 0)
+        if (grounded && Time.time - jumpPressedTime < 0.1)
         {
-            velocity.x = Mathf.MoveTowards(velocity.x, maxSpeed * moveInput, acceleration * Time.deltaTime);
-        }
-        else
-        {
-            velocity.x = Mathf.MoveTowards(velocity.x, 0, deceleration * Time.deltaTime);
+            grounded = false;
+            velocity = new Vector2(velocity.x, jumpHeight);
+            jumpPressedTime = 0;
         }
 
-        transform.Translate(velocity * Time.deltaTime);
-        *//*Collider2D[] hits = Physics2D.OverlapBoxAll(transform.position, boxCollider.size, 0);
-
-        grounded = false;
-        foreach (Collider2D hit in hits)
-        {
-            if (hit == boxCollider)
-                continue;
-
-            ColliderDistance2D colliderDistance = hit.Distance(boxCollider);
-
-            if (colliderDistance.isOverlapped)
-            {
-                transform.Translate(colliderDistance.pointA - colliderDistance.pointB);
-
-                if (Vector2.Angle(colliderDistance.normal, Vector2.up) < 90 && velocity.y < 0)
-                {
-                    grounded = true;
-                }
-
-            }
-        }*//*
-    }*/
+        lastInput = input;
+    }
 }

@@ -129,7 +129,7 @@ public class CharacterController2D : MonoBehaviour
 
             RaycastHit2D hitInfo;
 
-            float sideRayLength = margin + Mathf.Abs(velocity.x * Time.deltaTime);
+            float sideRayLength = box.width/2 + Mathf.Abs(velocity.x * Time.deltaTime);
             Vector2 direction = velocity.x > 0 ? Vector2.right : Vector2.left;
 
             bool connected = false;

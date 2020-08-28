@@ -86,7 +86,7 @@ public class CharacterController2D : MonoBehaviour
                 Vector2 origin = Vector2.Lerp(startPoint, endPoint, lerpAmmount);
 
                 hitInfo = Physics2D.Raycast(origin, Vector2.down, distance);
-                connected = hitInfo.collider != null;
+                connected = hitInfo.fraction > 0;
 
                 Debug.DrawRay(origin, Vector2.down, Color.red);
                 if (connected)
@@ -126,10 +126,12 @@ public class CharacterController2D : MonoBehaviour
         {
             float margin = ((float)marginPercent / (float)100 * box.width);
 
-            Vector2 startPoint = new Vector2(box.center.x, box.yMin + margin);
-            Vector2 endPoint = new Vector2(box.center.x, box.yMax - margin);
+            Vector2 startPoint = new Vector2(box.center.x, box.yMin);
+            Vector2 endPoint = new Vector2(box.center.x, box.yMax);
 
-            RaycastHit2D hitInfo;
+            RaycastHit2D[] hitInfoArray = new RaycastHit2D[horizontalRays];
+            int ammountConnected = 0;
+            float lastFraction = 0;
 
             float sideRayLength = box.width/2 + Mathf.Abs(velocity.x * Time.deltaTime);
             Vector2 direction = velocity.x > 0 ? Vector2.right : Vector2.left;
@@ -141,15 +143,25 @@ public class CharacterController2D : MonoBehaviour
                 float lerpAmmount = (float)i / (float) (horizontalRays - 1);
                 Vector2 origin = Vector2.Lerp(startPoint, endPoint, lerpAmmount);
 
-                hitInfo = Physics2D.Raycast(origin, direction, sideRayLength);
-                connected = hitInfo.collider != null;
+                hitInfoArray[i] = Physics2D.Raycast(origin, direction, sideRayLength);
+                connected = hitInfoArray[i].fraction > 0;
                 Debug.DrawRay(origin, direction, Color.green);
                 if (connected)
                 {
-                    Debug.Log("Connected");
-                    transform.Translate(direction * (hitInfo.distance - box.width / 2));
-                    velocity = new Vector2(0, velocity.y);
-                    break;
+                    if(lastFraction > 0)
+                    {
+                        float angle = Vector2.Angle(hitInfoArray[i].point - hitInfoArray[i - 1].point, Vector2.right);
+                        Debug.Log("angle=" + angle);
+                        if(Mathf.Abs(angle - 90) < 40)
+                        {
+                            transform.Translate(direction * (hitInfoArray[i].fraction * sideRayLength - box.width / 2));
+                            velocity = new Vector2(0, velocity.y);
+                            break;
+                        }
+                    }
+
+                    ammountConnected++;
+                    lastFraction = hitInfoArray[i].fraction;
                 }
             }
         }

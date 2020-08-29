@@ -46,13 +46,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d3437afdc36c3248923c330a3fc3037, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gravity: 6
-  maxSpeed: 9
+  gravity: 1
+  maxSpeed: 2
   maxFall: 9
-  walkAcceleration: 75
-  airAcceleration: 30
-  groundDeceleration: 70
-  jumpHeight: 4
+  walkAcceleration: 3
+  airAcceleration: 2
+  groundDeceleration: 1
+  jumpHeight: 10
+  lineRenderer: {fileID: 0}
 --- !u!212 &123371217050786519
 SpriteRenderer:
   m_ObjectHideFlags: 0

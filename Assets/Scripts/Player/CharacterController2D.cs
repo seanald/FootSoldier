@@ -41,8 +41,6 @@ public class CharacterController2D : MonoBehaviour
     private int horizontalRays = 6;
     private int verticalRays = 4;
     private int marginPercent = 20;
-
-    public LineRenderer lineRenderer;
     private void Start()
     {
         this.layerMask = LayerMask.NameToLayer("NormalCollisions");
@@ -74,7 +72,10 @@ public class CharacterController2D : MonoBehaviour
             Vector2 startPoint = new Vector2(box.xMin + margin, box.center.y);
             Vector2 endPoint = new Vector2(box.xMax - margin, box.center.y);
 
-            RaycastHit2D hitInfo;
+            RaycastHit2D[] hitInfoArray = new RaycastHit2D[verticalRays];
+
+            float smallFraction = Mathf.Infinity;
+            int indexUsed = 0;
 
             float distance = box.height / 2 + (grounded ? margin : Mathf.Abs(velocity.y * Time.deltaTime));
 
@@ -85,21 +86,28 @@ public class CharacterController2D : MonoBehaviour
                 float lerpAmmount = (float) i / (float) (verticalRays - 1);
                 Vector2 origin = Vector2.Lerp(startPoint, endPoint, lerpAmmount);
 
-                hitInfo = Physics2D.Raycast(origin, Vector2.down, distance);
-                connected = hitInfo.fraction > 0;
+                hitInfoArray[i] = Physics2D.Raycast(origin, Vector2.down, distance);
+                connected = hitInfoArray[i].fraction > 0;
 
                 Debug.DrawRay(origin, Vector2.down, Color.red);
                 if (connected)
                 {
-                    grounded = true;
-                    falling = false;
-                    transform.Translate(Vector2.down * (hitInfo.distance - box.height / 2));
-                    velocity = new Vector2(velocity.x, 0);
-                    break;
+                    if(hitInfoArray[i].fraction < smallFraction)
+                    {
+                        indexUsed = i;
+                        smallFraction = hitInfoArray[i].fraction;
+                    }
                 }
             }
 
-            if(!connected)
+            if (connected)
+            {
+                grounded = true;
+                falling = false;
+                transform.Translate(Vector2.down * (hitInfoArray[indexUsed].fraction * distance - box.height / 2));
+                velocity = new Vector2(velocity.x, 0);
+            }
+            else
             {
                 grounded = false;
             }
